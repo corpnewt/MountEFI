@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Turn on case-insensitive matching
+shopt -s nocasematch
+# turn on extended globbing
+shopt -s extglob
+
 scriptName="MountEFI - CorpNewt"
 scriptMessage="Select drive containing an EFI to mount:"
 
@@ -71,6 +76,23 @@ function mountEFI () {
     echo
     diskutil mount "$1"
     echo
+}
+
+function silentMount () {
+    
+    local __disk="$1"
+            
+    if [[ "$( isDisk "$__disk" )" == "0" ]]; then
+        #Valid disk - let's get the ident and mount
+        local __diskIdent="$( getDiskIdentifier "$__disk" )"
+        #Mount - but suppress all output
+        diskutil mount "$__diskIdent" >/dev/null 2>/dev/null
+        #exit with the error code from diskutil
+        exit $?
+    else
+        #Not a valid disk - exit with error code 1
+        exit 1
+    fi
 }
 
 
@@ -300,5 +322,15 @@ function getEFIIdentifier () {
 ###################################################
 ###             End Disk Functions              ###
 ###################################################
+
+if [[ "$1" == "-mount" ]]; then
+    if [[ "$2" != "" ]]; then
+        #We're mounting via command line.
+        #Hide all prompts and warnings.
+        silentMount "$2"
+    else
+        exit 1
+    fi
+fi
 
 displayWarning
