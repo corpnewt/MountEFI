@@ -164,7 +164,7 @@ function pickDisk () {
 			echo or mount point.
 			echo 
 			read -p "Press [enter] to return to drive selection..."
-			pickDrive "$1" "$2" "$3"
+			pickDisk "$1" "$2" "$3"
 		fi
     fi
 
