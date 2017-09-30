@@ -245,7 +245,11 @@ def main():
         if select < 0 or select >= len(vols):
             # OOB
             return
-        print(d.mount_partition(d.get_efi(vols[select-1])))
+        efi = d.get_efi(vols[select-1])
+        if not efi:
+            print("{} has no EFI partition...".format(vols[select-1]))
+        else:
+            print(d.mount_partition(efi))
         time.sleep(3)
         custom_quit()
     else:
@@ -253,7 +257,11 @@ def main():
         disk_ident = d.get_identifier(select)
         if not disk_ident:
             return
-        print(d.mount_partition(d.get_efi(disk_ident)))
+        efi = d.get_efi(disk_ident)
+        if not efi:
+            print("{} has no EFI partition...".format(d.get_parent(disk_ident)))
+        else:
+            print(d.mount_partition(d.get_efi(disk_ident)))
         time.sleep(3)
         custom_quit()
 
