@@ -33,12 +33,18 @@ class Disk:
     def get_disks(self):
         # Returns a dictionary object of connected disks
         disk_list = self._get_output([self.diskutil, "list", "-plist"])
-        return plistlib.loads(disk_list.encode("utf-8"))
+        if sys.version_info >= (3, 0):
+            return plistlib.loads(disk_list.encode("utf-8"))
+        else:
+            return plistlib.readPlistFromString(disk_list.encode("utf-8"))
 
     def get_apfs(self):
         # Returns a dictionary object of apfs disks
         disk_list = self._get_output([self.diskutil, "apfs", "list", "-plist"])
-        return plistlib.loads(disk_list.encode("utf-8"))
+        if sys.version_info >= (3, 0):
+            return plistlib.loads(disk_list.encode("utf-8"))
+        else:
+            return plistlib.readPlistFromString(disk_list.encode("utf-8"))
 
     def is_apfs(self, disk):
         # Takes a disk identifier, and returns whether or not it's apfs
