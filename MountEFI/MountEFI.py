@@ -313,7 +313,7 @@ def main():
         pass
     if type(select) is int:
         # Check if we're out of bounds
-        if select < 0 or select >= len(vols):
+        if select < 1 or select > len(vols):
             # OOB
             return
         efi = d.get_efi(vols[select-1])
@@ -322,7 +322,7 @@ def main():
         else:
             print(d.mount_partition(efi))
         time.sleep(3)
-        custom_quit()
+        return
     else:
         # Maybe it's a volume name/mount point/ident/etc
         disk_ident = d.get_identifier(select)
@@ -334,7 +334,7 @@ def main():
         else:
             print(d.mount_partition(d.get_efi(disk_ident)))
         time.sleep(3)
-        custom_quit()
+        return
 
 def custom_quit():
     head("MountEFI")
