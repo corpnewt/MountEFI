@@ -47,9 +47,13 @@ class Disk:
         if self.can_apfs:
             self.apfs  = self.get_apfs()
 
-    def _get_output(self, comm):
+    def _get_output(self, comm, shell = False):
         try:
-            p = subprocess.Popen(comm, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if shell and type(comm) is list:
+                comm = " ".join(comm)
+            if not shell and type(comm) is str:
+                comm = comm.split()
+            p = subprocess.Popen(comm, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             c = p.communicate()
             # p = subprocess.run(comm, shell=True, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             if not p.returncode == 0:
@@ -72,7 +76,11 @@ class Disk:
 
     def get_apfs(self):
         # Returns a dictionary object of apfs disks
-        disk_list = self._get_output([self.diskutil, "apfs", "list", "-plist"])
+        disk_list = self._get_output("echo y | " + self.diskutil + " apfs list -plist", True)
+        p_list = disk_list.split("<?xml")
+        if len(p_list) > 1:
+            # We had text before the start - get only the plist info
+            disk_list = "<?xml" + p_list[-1]
         if sys.version_info >= (3, 0):
             return plistlib.loads(disk_list.encode("utf-8"))
         else:
