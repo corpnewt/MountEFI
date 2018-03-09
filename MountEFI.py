@@ -305,6 +305,11 @@ def main():
     default = d.get_volume_name("/")
     if not default:
         default = "/"
+    print("NOTE: Appending \"q\" to the end of a choice will quit")
+    print("      after mount.  For example, \"1q\" would mount")
+    print("      the first option's EFI, then quit.  This ONLY")
+    print("      works when you use the number, not the path or")
+    print("      disk number.\n")
     select = grab("Please select a volume (default is {}):  ".format(default))
 
     if select.lower() == "q":
@@ -313,12 +318,19 @@ def main():
     head("MountEFI")
     print(" ")
 
+    quit_after = False
     if select == "":
         select = "/"
     try:
         select = int(select)
     except:
-        pass
+        try:
+            qcheck = select[-1]
+            select = int(select[:-1])
+            if qcheck.lower() == "q":
+                quit_after = True
+        except:
+            pass
     if type(select) is int:
         # Check if we're out of bounds
         if select < 1 or select > len(vols):
@@ -330,6 +342,8 @@ def main():
         else:
             print(d.mount_partition(efi))
         time.sleep(3)
+        if quit_after:
+            custom_quit()
         return
     else:
         # Maybe it's a volume name/mount point/ident/etc
