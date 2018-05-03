@@ -18,9 +18,11 @@ For example:  If another script calls `MountEFI -mount disk0s1` then my script w
 ## To install:
 
 Do the following one line at a time in Terminal:
-
+    
+    cd ~/Downloads
     git clone https://github.com/corpnewt/MountEFI
     cd MountEFI
     chmod +x MountEFI.command
+    mv ./MountEFI.app /Applications/
     
-Then run with either `./MountEFI.command` or by double-clicking *MountEFI.command*
+Then run with either `./MountEFI.command`, double-clicking *MountEFI.command*, or opening Spotlight and typing "MountEFI"
