@@ -25,6 +25,7 @@ class MountEFI:
                 "default_disk" : None,
                 "after_mount"  : None,
                 "full_layout"  : False,
+                "skip_countdown" : False,
             }
         os.chdir(cwd)
         self.full = self.settings.get("full_layout", False)
@@ -119,6 +120,12 @@ class MountEFI:
         print(" ")
         print("1. Return to Menu")
         print("2. Quit")
+        print("3. Open EFI and Return to Menu")
+        print("4. Open EFI and Quit")
+        if not self.settings.get("skip_countdown", False):
+            print("5. Skip After-Mount Countdown")
+        else:
+            print("5. Use After-Mount Countdown")
         print(" ")
         print("M. Main Menu")
         print("Q. Quit")
@@ -126,10 +133,23 @@ class MountEFI:
         menu = self.u.grab("Please pick an option:  ")
         if not len(menu):
             self.after_mount()
+            return
         menu = menu.lower()
-        if menu in ["1","2"]:
-            self.settings["after_mount"] = ["Return to Menu", "Quit"][int(menu)-1]
+        if menu in ["1","2","3","4"]:
+            self.settings["after_mount"] = [
+                "Return to Menu", 
+                "Quit", 
+                "Reveal and Return to Menu", 
+                "Reveal and Quit"
+                ][int(menu)-1]
             self.flush_settings()
+            return
+        elif menu == "5":
+            cd = self.settings.get("skip_countdown", False)
+            cd ^= True
+            self.settings["skip_countdown"] = cd
+            self.flush_settings()
+            self.after_mount()
             return
         elif menu == "m":
             return
@@ -302,13 +322,21 @@ class MountEFI:
                 print(out[0])
             else:
                 print(out[1])
-            self.u.grab("", timeout=3)
             # Check our settings
             am = self.settings.get("after_mount", None)
-            if am and am.lower() == "quit":
-                self.u.custom_quit()
-            elif am and am.lower() == "return to menu":
+            if not am:
                 continue
+            if "reveal" in am.lower():
+                # Reveal
+                mp = self.d.get_mount_point(efi)
+                if mp:
+                    self.r.run({"args":["open", mp]})
+            # Hang out for a couple seconds
+            if not self.settings.get("skip_countdown", False):
+                self.u.grab("", timeout=3)
+            if "quit" in am.lower():
+                # Quit
+                self.u.custom_quit()
 
     def quiet_mount(self, disk_list):
         ret = 0
