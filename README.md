@@ -1,17 +1,11 @@
 # MountEFI
-A more robust edition of my previous MountEFI script
-
-Added my usual collection of disk functions - plus some experimentation with callback functions.
+An *even* more robust edition of my previous MountEFI scripts.
 
 -
 
-~~Todo:~~
+Other scripts can call this script to do a silent mount - and receive a 0 on succes, or 1 (or higher) on failure.
 
-~~In the future, I plan to allow input/output based on another script.~~
-
-__Feature added.__  Other scripts can now call this script to do a silent mount - and receive a 0 on succes, or 1 (or higher) on failure.
-
-For example:  If another script calls `MountEFI -mount disk0s1` then my script would mount without user interaction, and return a 0 on success, or a 1 on failure.
+For example:  If another script calls `MountEFI.command disk0` then my script would mount without user interaction, and return a 0 on success, or a 1 on failure.  This can also take multiple EFIs to mount - `MountEFI.command disk0 / disk3` would mount the EFIs connected to `disk0`, the boot drive (`/`), and `disk3` if they exist.
 
 ***
 
