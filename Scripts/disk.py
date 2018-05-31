@@ -82,6 +82,12 @@ class Disk:
             return None
         return self.get_disk_info(disk_id).get("FilesystemName", None)
 
+    def get_disk_fs_type(self, disk):
+        disk_id = self.get_identifier(disk)
+        if not disk_id:
+            return None
+        return self.get_disk_info(disk_id).get("FilesystemType", None)
+
     def get_apfs(self):
         # Returns a dictionary object of apfs disks
         output = self.r.run({"args":"echo y | " + self.diskutil + " apfs list -plist", "shell" : True})
@@ -264,10 +270,41 @@ class Disk:
                         return p.get("DeviceIdentifier", None)
         return None
 
-    def mount_partition(self, disk):
+    def mount_partition(self, disk, sudo=False):
         disk_id = self.get_identifier(disk)
         if not disk_id:
             return None
+        if sudo:
+            # We need to create a new folder, then mount it manually
+            fst = self.get_disk_fs_type(disk_id)
+            if not fst:
+                # No detected fs
+                return None
+            vn = self.get_volume_name(disk_id)
+            if vn == "":
+                vn = "Untitled"
+            # Get safe volume name
+            if os.path.exists(os.path.join("/Volumes", vn)):
+                num = 1
+                while True:
+                    if os.path.exists(os.path.join("/Volumes", vn + " " + str(num))):
+                        num += 1
+                        continue
+                    break
+                vn = vn + " " + str(num)
+            # Create the dir, then mount
+            out = self.r.run([
+                {"args":["mkdir", os.path.join("/Volumes", vn)], "sudo":True, "show":True},
+                {"args":["mount", "-t", fst, "/dev/"+disk_id, os.path.join("/Volumes", vn)], "sudo":True, "show":True}
+            ], True)
+            self._update_disks()
+            if len(out) and type(out[0]) is tuple:
+                out = out[-1] # Set out to the last output
+                if out[2] != 0:
+                    # Non-zero exit code, clean up our mount point
+                    self.r.run({"args":["rm", "-Rf", os.path.join("/Volumes", vn)], "sudo":True})
+            return out
+
         out = self.r.run({"args":[self.diskutil, "mount", disk_id]})
         self._update_disks()
         return out

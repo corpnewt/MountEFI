@@ -98,6 +98,7 @@ class Run:
             stdout = comm.get("stdout", False)
             stderr = comm.get("stderr", False)
             mess   = comm.get("message", None)
+            show   = comm.get("show",   False)
             
             if not mess == None:
                 print(mess)
@@ -111,10 +112,13 @@ class Run:
                 if "sudo" in out[0]:
                     # Can sudo
                     if type(args) is list:
-                        args.insert(0, out[0]) # add to start of list
+                        args.insert(0, out[0].replace("\n", "")) # add to start of list
                     elif type(args) is str:
-                        args = out[0] + " " + args # add to start of string
+                        args = out[0].replace("\n", "") + " " + args # add to start of string
             
+            if show:
+                print(" ".join(args))
+
             if stream:
                 # Stream it!
                 out = self._stream_output(args, shell)
