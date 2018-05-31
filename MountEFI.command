@@ -257,7 +257,7 @@ class MountEFI:
         if not am:
             am = "Return to Menu"
         print("M. After Mounting: "+am)
-        print("T. Toggle Mount Method (currently {})".format(self.settings.get("mount_method", "diskutil")))
+        print("T. Toggle Mount Method (Current: {})".format(self.settings.get("mount_method", "diskutil")))
         print("Q. Quit")
         print(" ")
         print("(* denotes the booted Clover)")
