@@ -301,8 +301,9 @@ class Disk:
             if len(out) and type(out[0]) is tuple:
                 out = out[-1] # Set out to the last output
                 if out[2] != 0:
-                    # Non-zero exit code, clean up our mount point
-                    self.r.run({"args":["rm", "-Rf", os.path.join("/Volumes", vn)], "sudo":True})
+                    # Non-zero exit code, clean up our mount point - if it exists
+                    if os.path.exists(os.path.join("/Volumes", vn)):
+                        self.r.run({"args":["rm", "-Rf", os.path.join("/Volumes", vn)], "sudo":True})
             return out
 
         out = self.r.run({"args":[self.diskutil, "mount", disk_id]})
