@@ -11,6 +11,7 @@ class MountEFI:
         self.u  = utils.Utils("MountEFI")
         self.re = reveal.Reveal()
         # Get the tools we need
+        self.script_folder = "Scripts"
         self.bdmesg = self.get_binary("bdmesg")
         self.update_url = "https://raw.githubusercontent.com/corpnewt/MountEFIv2/master/MountEFI.command"
         
