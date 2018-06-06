@@ -258,7 +258,6 @@ class MountEFI:
         if not am:
             am = "Return to Menu"
         print("M. After Mounting: "+am)
-        print("T. Toggle Mount Method (Current: {})".format(self.settings.get("mount_method", "diskutil")))
         print("Q. Quit")
         print(" ")
         print("(* denotes the booted Clover)")
@@ -283,13 +282,6 @@ class MountEFI:
             return
         elif menu == "d":
             self.default_disk()
-            return
-        elif menu == "t":
-            if self.settings.get("mount_method", "diskutil") == "diskutil":
-                self.settings["mount_method"] = "sudo mount"
-            else:
-                self.settings["mount_method"] = "diskutil"
-            self.flush_settings()
             return
         elif menu == "l":
             self.settings["full_layout"] = self.full
@@ -326,8 +318,7 @@ class MountEFI:
             # Mount the EFI partition
             self.u.head("Mounting {}".format(efi))
             print(" ")
-            m = False if self.settings.get("mount_method", "diskutil").lower() == "diskutil" else True
-            out = self.d.mount_partition(efi, m)
+            out = self.d.mount_partition(efi)
             if out[2] == 0:
                 print(out[0])
             else:
