@@ -10,6 +10,10 @@ class Disk:
         self.os_version = ".".join(
             self.r.run({"args":["sw_vers", "-productVersion"]})[0].split(".")[:2]
         )
+        self.full_os_version = self.r.run({"args":["sw_vers", "-productVersion"]})[0]
+        if len(self.full_os_version.split(".")) < 3:
+            # Add .0 in case of 10.14
+            self.full_os_version += ".0"
         self.sudo_mount_version = "10.13.6"
         self.sudo_mount_types   = ["efi"]
         self.apfs = {}
@@ -277,7 +281,7 @@ class Disk:
         if not disk_id:
             return None
         sudo = False
-        if not self._compare_versions(self.os_version, self.sudo_mount_version) and self.get_content(disk_id).lower() in self.sudo_mount_types:
+        if not self._compare_versions(self.full_os_version, self.sudo_mount_version) and self.get_content(disk_id).lower() in self.sudo_mount_types:
             sudo = True
         out = self.r.run({"args":[self.diskutil, "mount", disk_id], "sudo":sudo})
         self._update_disks()
