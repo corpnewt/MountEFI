@@ -10,6 +10,8 @@ class Disk:
         self.os_version = ".".join(
             self.r.run({"args":["sw_vers", "-productVersion"]})[0].split(".")[:2]
         )
+        self.sudo_mount_version = "10.13.6"
+        self.sudo_mount_types   = ["efi"]
         self.apfs = {}
         self._update_disks()
 
@@ -270,43 +272,14 @@ class Disk:
                         return p.get("DeviceIdentifier", None)
         return None
 
-    def mount_partition(self, disk, sudo=False):
+    def mount_partition(self, disk):
         disk_id = self.get_identifier(disk)
         if not disk_id:
             return None
-        if sudo:
-            # We need to create a new folder, then mount it manually
-            fst = self.get_disk_fs_type(disk_id)
-            if not fst:
-                # No detected fs
-                return None
-            vn = self.get_volume_name(disk_id)
-            if vn == "":
-                vn = "Untitled"
-            # Get safe volume name
-            if os.path.exists(os.path.join("/Volumes", vn)):
-                num = 1
-                while True:
-                    if os.path.exists(os.path.join("/Volumes", vn + " " + str(num))):
-                        num += 1
-                        continue
-                    break
-                vn = vn + " " + str(num)
-            # Create the dir, then mount
-            out = self.r.run([
-                {"args":["mkdir", os.path.join("/Volumes", vn)], "sudo":True, "show":True},
-                {"args":["mount", "-t", fst, "/dev/"+disk_id, os.path.join("/Volumes", vn)], "sudo":True, "show":True}
-            ], True)
-            self._update_disks()
-            if len(out) and type(out[0]) is tuple:
-                out = out[-1] # Set out to the last output
-                if out[2] != 0:
-                    # Non-zero exit code, clean up our mount point - if it exists
-                    if os.path.exists(os.path.join("/Volumes", vn)):
-                        self.r.run({"args":["rm", "-Rf", os.path.join("/Volumes", vn)], "sudo":True})
-            return out
-
-        out = self.r.run({"args":[self.diskutil, "mount", disk_id]})
+        sudo = False
+        if not self._compare_versions(self.os_version, self.sudo_mount_version) and self.get_content(disk_id).lower() in self.sudo_mount_types:
+            sudo = True
+        out = self.r.run({"args":[self.diskutil, "mount", disk_id], "sudo":sudo})
         self._update_disks()
         return out
 
