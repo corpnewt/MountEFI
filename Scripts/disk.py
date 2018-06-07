@@ -30,23 +30,41 @@ class Disk:
             pass
         return p
 
-    def _compare_versions(self, vers1, vers2):
+    def _compare_versions(self, vers1, vers2, pad = -1):
         # Helper method to compare ##.## strings
         #
         # vers1 < vers2 = True
         # vers1 = vers2 = None
         # vers1 > vers2 = False
         #
-        try:
-            v1_parts = vers1.split(".")
-            v2_parts = vers2.split(".")
-        except:
-            # Formatted wrong - return None
-            return None
+        # Must be separated with a period
+        
+        # Cast as strings
+        vers1 = str(vers1)
+        vers2 = str(vers2)
+        
+        # Split to lists
+        v1_parts = vers1.split(".")
+        v2_parts = vers2.split(".")
+        
+        # Equalize lengths
+        if len(v1_parts) < len(v2_parts):
+            v1_parts.extend([pad for x in range(len(v2_parts))])
+        elif len(v2_parts) < len(v1_parts):
+            v2_parts.extend([pad for x in range(len(v1_parts))])
+        
+        # Iterate and compare
         for i in range(len(v1_parts)):
-            if int(v1_parts[i]) < int(v2_parts[i]):
+            # Remove non-numeric
+            v1 = ''.join(c for c in v1_parts[i] if c.isdigit())
+            v2 = ''.join(c for c in v2_parts[i] if c.isdigit())
+            # If empty - make it a pad var
+            v1 = pad if not len(v1) else v1
+            v2 = pad if not len(v2) else v2
+            # Compare
+            if int(v1) < int(v2):
                 return True
-            elif int(v1_parts[i]) > int(v2_parts[i]):
+            elif int(v1) > int(v2):
                 return False
         # Never differed - return None, must be equal
         return None
