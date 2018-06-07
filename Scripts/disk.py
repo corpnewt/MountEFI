@@ -30,7 +30,7 @@ class Disk:
             pass
         return p
 
-    def _compare_versions(self, vers1, vers2, pad = -1):
+    def _compare_versions(self, vers1, vers2, pad : int = -1):
         # Helper method to compare ##.## strings
         #
         # vers1 < vers2 = True
@@ -49,9 +49,11 @@ class Disk:
         
         # Equalize lengths
         if len(v1_parts) < len(v2_parts):
-            v1_parts.extend([pad for x in range(len(v2_parts))])
+            v1_parts.extend([str(pad) for x in range(len(v2_parts) - len(v1_parts))])
         elif len(v2_parts) < len(v1_parts):
-            v2_parts.extend([pad for x in range(len(v1_parts))])
+            v2_parts.extend([str(pad) for x in range(len(v1_parts) - len(v2_parts))])
+        
+        print("{} vs {}".format(v1_parts, v2_parts))
         
         # Iterate and compare
         for i in range(len(v1_parts)):
