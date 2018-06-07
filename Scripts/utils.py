@@ -20,7 +20,7 @@ class Utils:
             self.colors_dict = {}
         os.chdir(cwd)
 
-    def compare_versions(self, vers1, vers2, pad = -1):
+    def compare_versions(self, vers1, vers2, pad : int = -1):
         # Helper method to compare ##.## strings
         #
         # vers1 < vers2 = True
@@ -39,9 +39,11 @@ class Utils:
         
         # Equalize lengths
         if len(v1_parts) < len(v2_parts):
-            v1_parts.extend([pad for x in range(len(v2_parts))])
+            v1_parts.extend([str(pad) for x in range(len(v2_parts) - len(v1_parts))])
         elif len(v2_parts) < len(v1_parts):
-            v2_parts.extend([pad for x in range(len(v1_parts))])
+            v2_parts.extend([str(pad) for x in range(len(v1_parts) - len(v2_parts))])
+        
+        print("{} vs {}".format(v1_parts, v2_parts))
         
         # Iterate and compare
         for i in range(len(v1_parts)):
