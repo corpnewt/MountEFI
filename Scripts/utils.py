@@ -1,4 +1,4 @@
-import sys, os, time, re, json, datetime
+import sys, os, time, re, json, datetime, ctypes, subprocess
 
 if os.name == "nt":
     # Windows
@@ -20,25 +20,52 @@ class Utils:
             self.colors_dict = {}
         os.chdir(cwd)
 
-    def compare_versions(self, vers1, vers2, pad = -1):
+    def check_admin(self):
+        # Returns whether or not we're admin
+        try:
+            is_admin = os.getuid() == 0
+        except AttributeError:
+            is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+        return is_admin
+
+    def elevate(self, file):
+        # Runs the passed file as admin
+        if self.check_admin():
+            return
+        if os.name == "nt":
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, file, None, 1)
+        else:
+            try:
+                p = subprocess.Popen(["which", "sudo"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                c = p.communicate()[0].decode("utf-8", "ignore").replace("\n", "")
+                os.execv(c, [ sys.executable, 'python'] + sys.argv)
+            except:
+                exit(1)
+                
+    def compare_versions(self, vers1, vers2, **kwargs):
         # Helper method to compare ##.## strings
         #
         # vers1 < vers2 = True
         # vers1 = vers2 = None
         # vers1 > vers2 = False
-        #
-        # Must be separated with a period
         
         # Sanitize the pads
-        pad = -1 if not type(pad) is int else pad
+        pad = str(kwargs.get("pad", ""))
+        sep = str(kwargs.get("separator", "."))
+
+        ignore_case = kwargs.get("ignore_case", True)
         
         # Cast as strings
         vers1 = str(vers1)
         vers2 = str(vers2)
         
+        if ignore_case:
+            vers1 = vers1.lower()
+            vers2 = vers2.lower()
+
         # Split to lists
-        v1_parts = vers1.split(".")
-        v2_parts = vers2.split(".")
+        v1_parts = vers1.split(sep)
+        v2_parts = vers2.split(sep)
         
         # Equalize lengths
         if len(v1_parts) < len(v2_parts):
@@ -49,15 +76,15 @@ class Utils:
         # Iterate and compare
         for i in range(len(v1_parts)):
             # Remove non-numeric
-            v1 = ''.join(c for c in v1_parts[i] if c.isdigit())
-            v2 = ''.join(c for c in v2_parts[i] if c.isdigit())
+            v1 = ''.join(c.lower() for c in v1_parts[i] if c.isalnum())
+            v2 = ''.join(c.lower() for c in v2_parts[i] if c.isalnum())
             # If empty - make it a pad var
             v1 = pad if not len(v1) else v1
             v2 = pad if not len(v2) else v2
             # Compare
-            if int(v1) < int(v2):
+            if str(v1) < str(v2):
                 return True
-            elif int(v1) > int(v2):
+            elif str(v1) > str(v2):
                 return False
         # Never differed - return None, must be equal
         return None
