@@ -63,24 +63,16 @@ class Utils:
             vers1 = vers1.lower()
             vers2 = vers2.lower()
 
-        # Split to lists
-        v1_parts = vers1.split(sep)
-        v2_parts = vers2.split(sep)
-        
-        # Equalize lengths
-        if len(v1_parts) < len(v2_parts):
-            v1_parts.extend([str(pad) for x in range(len(v2_parts) - len(v1_parts))])
-        elif len(v2_parts) < len(v1_parts):
-            v2_parts.extend([str(pad) for x in range(len(v1_parts) - len(v2_parts))])
+        # Split and pad lists
+        v1_parts, v2_parts = self.pad_length(vers1.split(sep), vers2.split(sep))
         
         # Iterate and compare
         for i in range(len(v1_parts)):
             # Remove non-numeric
             v1 = ''.join(c.lower() for c in v1_parts[i] if c.isalnum())
             v2 = ''.join(c.lower() for c in v2_parts[i] if c.isalnum())
-            # If empty - make it a pad var
-            v1 = pad if not len(v1) else v1
-            v2 = pad if not len(v2) else v2
+            # Equalize the lengths
+            v1, v2 = self.pad_length(v1, v2)
             # Compare
             if str(v1) < str(v2):
                 return True
@@ -88,6 +80,24 @@ class Utils:
                 return False
         # Never differed - return None, must be equal
         return None
+
+    def pad_length(self, var1, var2, pad = "0"):
+        # Pads the vars on the left side to make them equal length
+        pad = "0" if len(str(pad)) < 1 else str(pad)[0]
+        if not type(var1) == type(var2):
+            # Type mismatch! Just return what we got
+            return (var1, var2)
+        if len(var1) < len(var2):
+            if type(var1) is list:
+                var1.extend([str(pad) for x in range(len(var2) - len(var1))])
+            else:
+                var1 = "{}{}".format((pad*(len(var2)-len(var1))), var1)
+        elif len(var2) < len(var1):
+            if type(var2) is list:
+                var2.extend([str(pad) for x in range(len(var1) - len(var2))])
+            else:
+                var2 = "{}{}".format((pad*(len(var1)-len(var2))), var2)
+        return (var1, var2)
         
     def check_path(self, path):
         # Loop until we either get a working path - or no changes
