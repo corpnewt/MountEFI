@@ -12,7 +12,6 @@ class MountEFI:
         self.re = reveal.Reveal()
         # Get the tools we need
         self.script_folder = "Scripts"
-        self.bdmesg = self.get_binary("bdmesg")
         self.update_url = "https://raw.githubusercontent.com/corpnewt/MountEFIv2/master/MountEFI.command"
         
         self.settings_file = kwargs.get("settings", None)
@@ -72,42 +71,6 @@ class MountEFI:
         run_command(["chmod", "+x", __file__])
         os.execv(__file__, sys.argv)
 
-    def get_uuid_from_bdmesg(self):
-        if not self.bdmesg:
-            return None
-        # Get bdmesg output - then parse for SelfDevicePath
-        bdmesg = self.r.run({"args":[self.bdmesg]})[0]
-        if not "SelfDevicePath=" in bdmesg:
-            # Not found
-            return None
-        try:
-            # Split to just the contents of that line
-            line = bdmesg.split("SelfDevicePath=")[1].split("\n")[0]
-            # Get the HD section
-            hd   = line.split("HD(")[1].split(")")[0]
-            # Get the UUID
-            uuid = hd.split(",")[2]
-            return uuid
-        except:
-            pass
-        return None
-
-    def get_binary(self, name):
-        # Check the system, and local Scripts dir for the passed binary
-        found = self.r.run({"args":["which", name]})[0].split("\n")[0].split("\r")[0]
-        if len(found):
-            # Found it on the system
-            return found
-        if os.path.exists(os.path.join(os.path.dirname(os.path.realpath(__file__)), name)):
-            # Found it locally
-            return os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
-        # Check the scripts folder
-        if os.path.exists(os.path.join(os.path.dirname(os.path.realpath(__file__)), self.script_folder, name)):
-            # Found it locally -> Scripts
-            return os.path.join(os.path.dirname(os.path.realpath(__file__)), self.script_folder, name)
-        # Not found
-        return None
-
     def flush_settings(self):
         if self.settings_file:
             cwd = os.getcwd()
@@ -160,7 +123,7 @@ class MountEFI:
 
     def default_disk(self):
         self.d.update()
-        clover = self.get_uuid_from_bdmesg()
+        clover = bdmesg.get_clover_uuid()
         print(clover)
         self.u.resize(80, 24)
         self.u.head("Select Default Disk")
@@ -193,7 +156,7 @@ class MountEFI:
 
     def get_efi(self):
         self.d.update()
-        clover = self.get_uuid_from_bdmesg()
+        clover = bdmesg.get_clover_uuid()
         i = 0
         disk_string = ""
         if not self.full:
@@ -269,6 +232,7 @@ class MountEFI:
             return self.d.get_efi(di)
         menu = menu.lower()
         if menu == "q":
+            self.u.resize(80,24)
             self.u.custom_quit()
         elif menu == "s":
             self.full ^= True
@@ -337,6 +301,7 @@ class MountEFI:
                 self.u.grab("", timeout=3)
             if "quit" in am.lower():
                 # Quit
+                self.u.resize(80,24)
                 self.u.custom_quit()
 
     def quiet_mount(self, disk_list):
