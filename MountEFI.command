@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # 0.0.0
 from Scripts import *
-import os, tempfile, datetime, shutil, time, plistlib, json, sys
+import os, tempfile, datetime, shutil, time, plistlib, json, sys, argparse
 
 class MountEFI:
     def __init__(self, **kwargs):
@@ -304,7 +304,7 @@ class MountEFI:
                 self.u.resize(80,24)
                 self.u.custom_quit()
 
-    def quiet_mount(self, disk_list):
+    def quiet_mount(self, disk_list, unmount=False):
         ret = 0
         for disk in disk_list:
             ident = self.d.get_identifier(disk)
@@ -313,17 +313,33 @@ class MountEFI:
             efi = self.d.get_efi(ident)
             if not efi:
                 continue
-            out = self.d.mount_partition(efi)
+            if unmount:
+                out = self.d.unmount_partition(efi)
+            else:
+                out = self.d.mount_partition(efi)
             if not out[2] == 0:
                 ret = out[2]
         exit(ret)
 
 if __name__ == '__main__':
+    # Setup the cli args
+    parser = argparse.ArgumentParser(prog="MountEFI.command", description="MountEFI - an EFI Mounting Utility by CorpNewt")
+    parser.add_argument("-u", "--unmount", help="unmount instead of mount the passed EFIs", action="store_true")
+    parser.add_argument("-p", "--print-efi", help="prints the disk#s# of the EFI attached to the passed var")
+    parser.add_argument("disks",nargs="*")
+
+    args = parser.parse_args()
 
     m = MountEFI(settings="./Scripts/settings.json")
+    # Gather defaults
+    unmount = False
+    if args.unmount:
+        unmount = True
+    if args.print_efi:
+        print("{}".format(m.d.get_efi(args.print_efi)))
     # Check for args
-    if len(sys.argv) > 1:
+    if len(args.disks):
         # We got command line args!
-        m.quiet_mount(sys.argv[1:])
-    else:
+        m.quiet_mount(args.disks, unmount)
+    elif not args.print_efi:
         m.main()
