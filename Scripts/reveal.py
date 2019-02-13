@@ -15,6 +15,9 @@ class Reveal:
         # Reveals the passed path in Finder - only works on macOS
         if not sys.platform == "darwin":
             return ("", "macOS Only", 1)
+        if not path:
+            # No path sent - nothing to reveal
+            return ("", "No path specified", 1)
         # Build our script - then convert it to a single line task
         if not os.path.exists(path):
             # Not real - bail
@@ -31,7 +34,6 @@ class Reveal:
                 "-e", "end tell"
             ])
         else:
-            print(self.get_parent(path))
             if path == self.get_parent(path):
                 command.extend([
                     "-e", "set p to \"{}\"".format(path.replace("\"", "\\\"")),
