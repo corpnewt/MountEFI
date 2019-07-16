@@ -123,7 +123,7 @@ class MountEFI:
 
     def default_disk(self):
         self.d.update()
-        clover = bdmesg.get_clover_uuid()
+        clover = bdmesg.get_bootloader_uuid()
         print(clover)
         self.u.resize(80, 24)
         self.u.head("Select Default Disk")
@@ -131,7 +131,7 @@ class MountEFI:
         print("1. None")
         print("2. Boot Disk")
         if clover:
-            print("3. Booted Clover")
+            print("3. Booted EFI (Clover/OC)")
         print(" ")
         print("M. Main Menu")
         print("Q. Quit")
@@ -156,7 +156,7 @@ class MountEFI:
 
     def get_efi(self):
         self.d.update()
-        clover = bdmesg.get_clover_uuid()
+        clover = bdmesg.get_bootloader_uuid()
         i = 0
         disk_string = ""
         if not self.full:
@@ -203,7 +203,7 @@ class MountEFI:
         print("L. Set As Default Layout (Current: {})".format(l_str))
         print("B. Mount the Boot Drive's EFI")
         if clover:
-            print("C. Mount the Booted Clover's EFI")
+            print("C. Mount the Booted EFI (Clover/OC)")
         print("")
 
         dd = self.settings.get("default_disk", None)
@@ -223,7 +223,7 @@ class MountEFI:
         print("M. After Mounting: "+am)
         print("Q. Quit")
         print(" ")
-        print("(* denotes the booted Clover)")
+        print("(* denotes the booted EFI (Clover/OC))")
 
         menu = self.u.grab("Pick the drive containing your EFI:  ")
         if not len(menu):
