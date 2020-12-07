@@ -2,7 +2,15 @@ import argparse
 import json
 import os
 
+from appdirs import user_data_dir
+
 from mount_efi import Disk, Reveal, Run, Utils, get_bootloader_uuid
+from mount_efi.__about__ import __author__, __description__
+
+
+USER_DATA_DIR = user_data_dir(__description__, __author__)
+DEFAULT_SETTINGS_BASENAME = 'settings.json'
+DEFAULT_SETTINGS_PATH = os.path.join(USER_DATA_DIR, DEFAULT_SETTINGS_BASENAME)
 
 
 class MountEFI:
@@ -30,10 +38,10 @@ class MountEFI:
 
     def flush_settings(self):
         if self.settings_file:
-            cwd = os.getcwd()
-            os.chdir(os.path.dirname(os.path.realpath(__file__)))
+            settings_dir = os.path.dirname(self.settings_file)
+            if not os.path.exists(settings_dir):
+                os.makedirs(settings_dir, exist_ok=True)
             json.dump(self.settings, open(self.settings_file, "w"))
-            os.chdir(cwd)
 
     def after_mount(self):
         self.u.resize(80, 24)
@@ -281,7 +289,6 @@ class MountEFI:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog="MountEFI.command",
         description="MountEFI - an EFI Mounting Utility by CorpNewt"
     )
     parser.add_argument(
@@ -292,7 +299,13 @@ def parse_args():
         "-p", "--print-efi",
         help="prints the disk#s# of the EFI attached to the passed var"
     )
-    parser.add_argument("disks", nargs="*", metavar="DISK")
+    parser.add_argument(
+        "-s", "--settings", default=DEFAULT_SETTINGS_PATH,
+        help="use a JSON settings file (default: '%(default)s')"
+    )
+    parser.add_argument(
+        "disks", nargs="*", metavar="DISK"
+    )
 
     return parser.parse_args()
 
@@ -300,7 +313,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    m = MountEFI(settings="./Scripts/settings.json")
+    m = MountEFI(settings=args.settings)
 
     # Gather defaults
     unmount = False
