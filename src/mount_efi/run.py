@@ -1,10 +1,16 @@
-import sys, subprocess, time, threading, shlex
+import sys
+import subprocess
+import time
+import threading
+import shlex
+
 try:
     from Queue import Queue, Empty
 except:
     from queue import Queue, Empty
 
 ON_POSIX = 'posix' in sys.builtin_module_names
+
 
 class Run:
 
@@ -59,7 +65,7 @@ class Run:
                 if not c==z=="": continue # Keep going until empty
                 # No output - see if still running
                 p.poll()
-                if p.returncode != None:
+                if p.returncode is not None:
                     # Subprocess ended
                     break
                 # No output, but subprocess still running - stall for 20ms
@@ -90,7 +96,7 @@ class Run:
             p = subprocess.Popen(comm, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             c = p.communicate()
         except:
-            if c == None:
+            if c is None:
                 return ("", "Command not found!", 1)
         return (self._decode(c[0]), self._decode(c[1]), p.returncode)
 
@@ -109,8 +115,8 @@ class Run:
             stderr = comm.get("stderr", False)
             mess   = comm.get("message", None)
             show   = comm.get("show",   False)
-            
-            if not mess == None:
+
+            if mess is not None:
                 print(mess)
 
             if not len(args):
@@ -125,7 +131,7 @@ class Run:
                         args.insert(0, out[0].replace("\n", "")) # add to start of list
                     elif type(args) is str:
                         args = out[0].replace("\n", "") + " " + args # add to start of string
-            
+
             if show:
                 print(" ".join(args))
 

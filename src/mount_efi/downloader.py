@@ -1,5 +1,9 @@
-import sys, os, time, ssl, gzip
+import gzip
+import os
+import ssl
+import sys
 from io import BytesIO
+
 # Python-aware urllib stuff
 if sys.version_info >= (3, 0):
     from urllib.request import urlopen, Request
@@ -8,13 +12,14 @@ else:
     import urllib2
     from urllib2 import urlopen, Request
 
+
 class Downloader:
 
     def __init__(self,**kwargs):
         self.ua = kwargs.get("useragent",{"User-Agent":"Mozilla"})
         self.chunk = 1048576 # 1024 x 1024 i.e. 1MiB
 
-        # Provide reasonable default logic to workaround macOS CA file handling 
+        # Provide reasonable default logic to workaround macOS CA file handling
         cafile = ssl.get_default_verify_paths().openssl_cafile
         try:
             # If default OpenSSL CA file does not exist, use that from certifi
@@ -35,7 +40,7 @@ class Downloader:
 
     def open_url(self, url, headers = None):
         # Fall back on the default ua if none provided
-        headers = self.ua if headers == None else headers
+        headers = self.ua if headers is None else headers
         # Wrap up the try/except block so we don't have to do this for each function
         try:
             response = urlopen(Request(url, headers=headers), context=self.ssl_context)
@@ -49,7 +54,7 @@ class Downloader:
         # suffix is the target suffix to locate (B, KB, MB, etc) - if found
         # use_2014 denotes whether or not we display in MiB vs MB
         # round_to is the number of dedimal points to round our result to (0-15)
-        # strip_zeroes denotes whether we strip out zeroes 
+        # strip_zeroes denotes whether we strip out zeroes
 
         # Failsafe in case our size is unknown
         if size == -1:
@@ -92,12 +97,12 @@ class Downloader:
 
     def get_string(self, url, progress = True, headers = None, expand_gzip = True):
         response = self.get_bytes(url,progress,headers,expand_gzip)
-        if response == None: return None
+        if response is None: return None
         return self._decode(response)
 
     def get_bytes(self, url, progress = True, headers = None, expand_gzip = True):
         response = self.open_url(url, headers)
-        if response == None: return None
+        if response is None: return None
         bytes_so_far = 0
         try: total_size = int(response.headers['Content-Length'])
         except: total_size = -1
@@ -116,7 +121,7 @@ class Downloader:
 
     def stream_to_file(self, url, file_path, progress = True, headers = None):
         response = self.open_url(url, headers)
-        if response == None: return None
+        if response is None: return None
         bytes_so_far = 0
         try: total_size = int(response.headers['Content-Length'])
         except: total_size = -1

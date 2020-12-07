@@ -1,11 +1,14 @@
-import binascii, subprocess, sys
+import binascii
+import subprocess
+import sys
+
 
 def get_clover_uuid():
     bd = bdmesg()
     if not len(bd):
         return ""
     # Get bdmesg output - then parse for SelfDevicePath
-    if not "SelfDevicePath=" in bd:
+    if "SelfDevicePath=" not in bd:
         # Not found
         return ""
     try:
@@ -54,7 +57,7 @@ def _bdmesg(comm):
     bd = _decode(bd)
     for line in bd.split("\n"):
         # We're just looking for the "boot-log" property, then we need to format it
-        if not '"boot-log"' in line:
+        if '"boot-log"' not in line:
             # Skip it!
             continue
         # Must have found it - let's try to split it, then get the hex data and process it

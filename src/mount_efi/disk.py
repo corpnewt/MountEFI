@@ -1,15 +1,19 @@
-import subprocess, plistlib, sys, os, time, json
-sys.path.append(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))
-import run
+import os
+import plistlib
+import sys
+
+from .run import Run
+
 if sys.version_info < (3,0):
     # Force use of StringIO instead of cStringIO as the latter
     # has issues with Unicode strings
     from StringIO import StringIO
 
+
 class Disk:
 
     def __init__(self):
-        self.r = run.Run()
+        self.r = Run()
         self.diskutil = self.get_diskutil()
         self.os_version = ".".join(
             self.r.run({"args":["sw_vers", "-productVersion"]})[0].split(".")[:2]
@@ -73,24 +77,24 @@ class Disk:
         # vers1 > vers2 = False
         #
         # Must be separated with a period
-        
+
         # Sanitize the pads
         pad = -1 if not type(pad) is int else pad
-        
+
         # Cast as strings
         vers1 = str(vers1)
         vers2 = str(vers2)
-        
+
         # Split to lists
         v1_parts = vers1.split(".")
         v2_parts = vers2.split(".")
-        
+
         # Equalize lengths
         if len(v1_parts) < len(v2_parts):
             v1_parts.extend([str(pad) for x in range(len(v2_parts) - len(v1_parts))])
         elif len(v2_parts) < len(v1_parts):
             v2_parts.extend([str(pad) for x in range(len(v1_parts) - len(v2_parts))])
-        
+
         # Iterate and compare
         for i in range(len(v1_parts)):
             # Remove non-numeric
@@ -169,7 +173,7 @@ class Disk:
             return None
         # Takes a disk identifier, and returns whether or not it's apfs
         for d in self.disks.get("AllDisksAndPartitions", []):
-            if not "APFSVolumes" in d:
+            if "APFSVolumes" not in d:
                 continue
             if d.get("DeviceIdentifier", "").lower() == disk_id.lower():
                 return True
@@ -182,7 +186,7 @@ class Disk:
         disk_id = self.get_identifier(disk)
         if not disk_id:
             return None
-        # Takes a disk identifier, and returns whether or not that specific 
+        # Takes a disk identifier, and returns whether or not that specific
         # disk/volume is an APFS Container
         for d in self.disks.get("AllDisksAndPartitions", []):
             # Only check partitions
@@ -195,7 +199,7 @@ class Disk:
         disk_id = self.get_identifier(disk)
         if not disk_id:
             return None
-        # Takes a disk identifier, and returns whether or not that specific 
+        # Takes a disk identifier, and returns whether or not that specific
         # disk/volume is an CoreStorage Container
         for d in self.disks.get("AllDisksAndPartitions", []):
             # Only check partitions
@@ -240,7 +244,7 @@ class Disk:
         if not disk_id:
             return None
         return disk_id.replace("disk", "didk").split("s")[0].replace("didk", "disk")
-        
+
     def _get_physical_disk(self, disk, search_term):
         # Change disk0s1 to disk0
         our_disk = self.get_top_identifier(disk)
@@ -356,7 +360,7 @@ class Disk:
         if not disk_id:
             return None
         m = self.get_mount_point(disk_id)
-        return (m != None and len(m))
+        return (m is not None and len(m))
 
     def get_volumes(self):
         # Returns a list object with all volumes from disks
@@ -421,7 +425,7 @@ class Disk:
         vol_list = []
         for v in self.get_mounted_volumes():
             i = self.get_identifier(os.path.join("/Volumes", v))
-            if i == None:
+            if i is None:
                 i = self.get_identifier("/")
                 if not self.get_volume_name(i) == v:
                     # Not valid and not our boot drive
@@ -437,12 +441,12 @@ class Disk:
 
     def get_disks_and_partitions_dict(self):
         # Returns a list of dictionaries like so:
-        # { "disk0" : { "partitions" : [ 
-        #    { 
-        #      "identifier" : "disk0s1", 
-        #      "name" : "EFI", 
+        # { "disk0" : { "partitions" : [
+        #    {
+        #      "identifier" : "disk0s1",
+        #      "name" : "EFI",
         #      "mount_point" : "/Volumes/EFI"
-        #     } 
+        #     }
         #  ] } }
         disks = {}
         for d in self.disks.get("AllDisks", []):
@@ -457,7 +461,7 @@ class Disk:
                 continue
             if self.is_cs_container(d):
                 continue
-            if not parent in disks:
+            if parent not in disks:
                 disks[parent] = { "partitions" : [] }
             disks[parent]["partitions"].append({
                 "name" : self.get_volume_name(d),

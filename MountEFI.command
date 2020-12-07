@@ -1,19 +1,22 @@
 #!/usr/bin/env python
-# 0.0.0
-from Scripts import *
-import os, tempfile, datetime, shutil, time, plistlib, json, sys, argparse
+import argparse
+import json
+import os
+import sys
+
+from mount_efi import bdmesg, Disk, Reveal, Run, Utils
+
 
 class MountEFI:
     def __init__(self, **kwargs):
-        self.r  = run.Run()
-        self.d  = disk.Disk()
-        self.dl = downloader.Downloader()
-        self.u  = utils.Utils("MountEFI")
-        self.re = reveal.Reveal()
+        self.r = Run()
+        self.d = Disk()
+        self.u = Utils("MountEFI")
+        self.re = Reveal()
         # Get the tools we need
         self.script_folder = "Scripts"
         self.update_url = "https://raw.githubusercontent.com/corpnewt/MountEFIv2/master/MountEFI.command"
-        
+
         self.settings_file = kwargs.get("settings", None)
         cwd = os.getcwd()
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -71,6 +74,9 @@ class MountEFI:
         run_command(["chmod", "+x", __file__])
         os.execv(__file__, sys.argv)
 
+
+
+
     def flush_settings(self):
         if self.settings_file:
             cwd = os.getcwd()
@@ -101,9 +107,9 @@ class MountEFI:
         menu = menu.lower()
         if menu in ["1","2","3","4"]:
             self.settings["after_mount"] = [
-                "Return to Menu", 
-                "Quit", 
-                "Reveal and Return to Menu", 
+                "Return to Menu",
+                "Quit",
+                "Reveal and Return to Menu",
                 "Reveal and Quit"
                 ][int(menu)-1]
             self.flush_settings()
@@ -216,7 +222,7 @@ class MountEFI:
             print("D. Pick Default Disk ({} - {})".format(self.d.get_volume_name(di), di))
         else:
             print("D. Pick Default Disk (None Set)")
-        
+
         am = self.settings.get("after_mount", None)
         if not am:
             am = "Return to Menu"
@@ -320,6 +326,7 @@ class MountEFI:
             if not out[2] == 0:
                 ret = out[2]
         exit(ret)
+
 
 if __name__ == '__main__':
     # Setup the cli args
