@@ -3,7 +3,7 @@ import argparse
 import json
 import os
 
-from mount_efi import bdmesg, Disk, Reveal, Run, Utils
+from mount_efi import Disk, Reveal, Run, Utils, get_bootloader_uuid
 
 
 class MountEFI:
@@ -81,7 +81,7 @@ class MountEFI:
 
     def default_disk(self):
         self.d.update()
-        clover = bdmesg.get_bootloader_uuid()
+        clover = get_bootloader_uuid()
         print(clover)
         self.u.resize(80, 24)
         self.u.head("Select Default Disk")
@@ -114,7 +114,7 @@ class MountEFI:
 
     def get_efi(self):
         self.d.update()
-        clover = bdmesg.get_bootloader_uuid()
+        clover = get_bootloader_uuid()
         i = 0
         disk_string = ""
         if not self.full:
@@ -280,22 +280,36 @@ class MountEFI:
         exit(ret)
 
 
-if __name__ == '__main__':
-    # Setup the cli args
-    parser = argparse.ArgumentParser(prog="MountEFI.command", description="MountEFI - an EFI Mounting Utility by CorpNewt")
-    parser.add_argument("-u", "--unmount", help="unmount instead of mount the passed EFIs", action="store_true")
-    parser.add_argument("-p", "--print-efi", help="prints the disk#s# of the EFI attached to the passed var")
-    parser.add_argument("disks",nargs="*")
+def parse_args():
+    parser = argparse.ArgumentParser(
+        prog="MountEFI.command",
+        description="MountEFI - an EFI Mounting Utility by CorpNewt"
+    )
+    parser.add_argument(
+        "-u", "--unmount", action="store_true",
+        help="unmount instead of mount the passed EFIs"
+    )
+    parser.add_argument(
+        "-p", "--print-efi",
+        help="prints the disk#s# of the EFI attached to the passed var"
+    )
+    parser.add_argument("disks", nargs="*", metavar="DISK")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    args = parse_args()
 
     m = MountEFI(settings="./Scripts/settings.json")
+
     # Gather defaults
     unmount = False
     if args.unmount:
         unmount = True
     if args.print_efi:
         print("{}".format(m.d.get_efi(args.print_efi)))
+
     # Check for args
     if len(args.disks):
         # We got command line args!
