@@ -2,6 +2,6 @@ from setuptools import setup
 
 
 setup(
-    name="mount_efi",
+    name="MountEFI",
     setup_requires=["setupmeta"],
 )

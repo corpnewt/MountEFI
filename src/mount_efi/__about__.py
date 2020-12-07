@@ -1,1 +1,5 @@
+__description__ = 'MountEFI'
 __version__ = '0.0.0'
+__versioning__ = 'post'
+__author__ = 'corpnewt'
+__url__ = 'https://github.com/corpnewt'

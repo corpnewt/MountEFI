@@ -14,6 +14,10 @@ Do the following one line at a time in Terminal:
 
     git clone https://github.com/corpnewt/MountEFI
     cd MountEFI
-    chmod +x MountEFI.command
-    
-Then run with either `./MountEFI.command` or by double-clicking *MountEFI.command*
+    pip install .
+
+Or:
+
+    pip install MountEFI
+
+Then run with either `mount-efi` or `MountEFI`.
