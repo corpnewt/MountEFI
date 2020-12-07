@@ -1,13 +1,14 @@
-import sys, os
-sys.path.append(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))
-import run
+import sys
+import os
+from .run import Run
+
 
 class Reveal:
 
     def __init__(self):
-        self.r = run.Run()
+        self.r = Run()
         return
-    
+
     def get_parent(self, path):
         return os.path.normpath(os.path.join(path, os.pardir))
 

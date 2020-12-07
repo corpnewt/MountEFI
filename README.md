@@ -1,4 +1,5 @@
 # MountEFI
+
 An *even* more robust edition of my previous MountEFI scripts.
 
 Other scripts can call this script to do a silent mount - and receive a 0 on succes, or 1 (or higher) on failure.
@@ -13,6 +14,10 @@ Do the following one line at a time in Terminal:
 
     git clone https://github.com/corpnewt/MountEFI
     cd MountEFI
-    chmod +x MountEFI.command
-    
-Then run with either `./MountEFI.command` or by double-clicking *MountEFI.command*
+    pip install .
+
+Or:
+
+    pip install MountEFI
+
+Then run with either `mount-efi` or `MountEFI`.
