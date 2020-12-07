@@ -2,7 +2,6 @@
 import argparse
 import json
 import os
-import sys
 
 from mount_efi import bdmesg, Disk, Reveal, Run, Utils
 
@@ -13,9 +12,6 @@ class MountEFI:
         self.d = Disk()
         self.u = Utils("MountEFI")
         self.re = Reveal()
-        # Get the tools we need
-        self.script_folder = "Scripts"
-        self.update_url = "https://raw.githubusercontent.com/corpnewt/MountEFIv2/master/MountEFI.command"
 
         self.settings_file = kwargs.get("settings", None)
         cwd = os.getcwd()
@@ -32,50 +28,6 @@ class MountEFI:
             }
         os.chdir(cwd)
         self.full = self.settings.get("full_layout", False)
-
-    def check_update(self):
-        # Checks against https://raw.githubusercontent.com/corpnewt/MountEFIv2/master/MountEFI.command to see if we need to update
-        self.u.head("Checking for Updates")
-        print(" ")
-        with open(os.path.realpath(__file__), "r") as f:
-            # Our version should always be the second line
-            version = get_version(f.read())
-        print(version)
-        try:
-            new_text = _get_string(url)
-            new_version = get_version(new_text)
-        except:
-            # Not valid json data
-            print("Error checking for updates (network issue)")
-            return
-
-        if version == new_version:
-            # The same - return
-            print("v{} is already current.".format(version))
-            return
-        # Split the version number
-        try:
-            v = version.split(".")
-            cv = new_version.split(".")
-        except:
-            # not formatted right - bail
-            print("Error checking for updates (version string malformed)")
-            return
-
-        if not need_update(cv, v):
-            print("v{} is already current.".format(version))
-            return
-
-        # Update
-        with open(os.path.realpath(__file__), "w") as f:
-            f.write(new_text)
-
-        # chmod +x, then restart
-        run_command(["chmod", "+x", __file__])
-        os.execv(__file__, sys.argv)
-
-
-
 
     def flush_settings(self):
         if self.settings_file:
