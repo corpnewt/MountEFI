@@ -171,7 +171,7 @@ class MountEFI:
                 disk_string += "\n"
         else:
             mounts = self.d.get_disks_and_partitions_dict()
-            disks = mounts.keys()
+            disks = list(mounts)
             for d in disks:
                 i += 1
                 disk_string+= "{}. {}:\n".format(i, d)
@@ -251,27 +251,23 @@ class MountEFI:
             self.settings["full_layout"] = self.full
             self.flush_settings()
             return
-        try:
-            disk_iden = int(menu)
-            if not (disk_iden > 0 and disk_iden <= len(mounts)):
-                # out of range!
-                self.u.grab("Invalid disk!", timeout=3)
-                return self.get_efi()
-            if type(mounts) is list:
-                # We have the small list
-                disk = mounts[disk_iden-1]["identifier"]
-            else:
-                # We have the dict
-                disk = mounts.keys()[disk_iden-1]
-        except:
-            disk = menu
+        try: disk = mounts[int(menu)-1]["identifier"] if isinstance(mounts, list) else list(mounts)[int(menu)-1]
+        except: disk = menu
         iden = self.d.get_identifier(disk)
         name = self.d.get_volume_name(disk)
         if not iden:
             self.u.grab("Invalid disk!", timeout=3)
             return self.get_efi()
         # Valid disk!
-        return self.d.get_efi(iden)
+        efi = self.d.get_efi(iden)
+        if not efi:
+            self.u.head("No EFI Partition")
+            print("")
+            print("There is no EFI partition associated with {}!".format(iden))
+            print("")
+            self.u.grab("Press returning in 3 seconds...", timeout=3)
+            return self.get_efi()
+        return efi
 
     def main(self):
         while True:
@@ -279,7 +275,8 @@ class MountEFI:
             if not efi:
                 # Got nothing back
                 continue
-            # Mount the EFI partition
+            # Resize and then mount the EFI partition
+            self.u.resize(80, 24)
             self.u.head("Mounting {}".format(efi))
             print(" ")
             out = self.d.mount_partition(efi)
@@ -301,7 +298,6 @@ class MountEFI:
                 self.u.grab("", timeout=3)
             if "quit" in am.lower():
                 # Quit
-                self.u.resize(80,24)
                 self.u.custom_quit()
 
     def quiet_mount(self, disk_list, unmount=False):
