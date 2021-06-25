@@ -79,7 +79,7 @@ class MountEFI:
             os.chdir(cwd)
 
     def after_mount(self):
-        self.u.resize(80, 24)
+        if self.settings.get("resize_window"): self.u.resize(80, 24)
         self.u.head("After Mount Action")
         print(" ")
         print("1. Return to Menu")
@@ -124,8 +124,7 @@ class MountEFI:
     def default_disk(self):
         self.d.update()
         clover = bdmesg.get_bootloader_uuid()
-        print(clover)
-        self.u.resize(80, 24)
+        if self.settings.get("resize_window"): self.u.resize(80, 24)
         self.u.head("Select Default Disk")
         print(" ")
         print("1. None")
@@ -188,7 +187,7 @@ class MountEFI:
         height = len(disk_string.split("\n"))+16
         if height < 24:
             height = 24
-        self.u.resize(80, height)
+        if self.settings.get("resize_window"): self.u.resize(80, height)
         self.u.head()
         print(" ")
         print(disk_string)
@@ -221,6 +220,7 @@ class MountEFI:
         if not am:
             am = "Return to Menu"
         print("M. After Mounting: "+am)
+        print("R. Toggle Window Resizing (Currently {})".format("Enabled" if self.settings.get("resize_window",True) else "Disabled"))
         print("Q. Quit")
         print(" ")
         print("(* denotes the booted EFI (Clover/OC))")
@@ -232,7 +232,7 @@ class MountEFI:
             return self.d.get_efi(di)
         menu = menu.lower()
         if menu == "q":
-            self.u.resize(80,24)
+            if self.settings.get("resize_window"): self.u.resize(80,24)
             self.u.custom_quit()
         elif menu == "s":
             self.full ^= True
@@ -249,6 +249,10 @@ class MountEFI:
             return
         elif menu == "l":
             self.settings["full_layout"] = self.full
+            self.flush_settings()
+            return
+        elif menu == "r":
+            self.settings["resize_window"] = not self.settings.get("resize_window",True)
             self.flush_settings()
             return
         try: disk = mounts[int(menu)-1]["identifier"] if isinstance(mounts, list) else list(mounts)[int(menu)-1]
@@ -276,7 +280,7 @@ class MountEFI:
                 # Got nothing back
                 continue
             # Resize and then mount the EFI partition
-            self.u.resize(80, 24)
+            if self.settings.get("resize_window"): self.u.resize(80, 24)
             self.u.head("Mounting {}".format(efi))
             print(" ")
             out = self.d.mount_partition(efi)
