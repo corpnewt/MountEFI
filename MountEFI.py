@@ -228,7 +228,6 @@ class MountEFI:
         try: disk = mounts[int(menu)-1]["identifier"] if isinstance(mounts, list) else list(mounts)[int(menu)-1]
         except: disk = menu
         iden = self.d.get_identifier(disk)
-        name = self.d.get_volume_name(disk)
         if not iden:
             self.u.grab("Invalid disk!", timeout=3)
             return self.get_efi()
