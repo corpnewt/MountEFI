@@ -5,15 +5,24 @@ import os, tempfile, datetime, shutil, time, plistlib, json, sys, argparse
 
 class MountEFI:
     def __init__(self, **kwargs):
-        self.r  = run.Run()
-        self.d  = disk.Disk()
-        self.dl = downloader.Downloader()
-        self.u  = utils.Utils("MountEFI")
-        self.re = reveal.Reveal()
+        self.r = run.Run()
+        self.u = utils.Utils("MountEFI")
+        if not kwargs.get("quiet"):
+            # Give some feedback in case we have slow disks - particularly annoying
+            # when waiting on an APFS volume formatted in a newer OS while we're booted
+            # in an older OS.
+            self.u.head("MountEFI")
+            print("\nWaiting for disks...")
+            print("\nIf you see this message for a long while, you may have a disk that is")
+            print("slow or malfunctioning - causing \"diskutil list\" or \"diskdump\" to stall.")
+            print("")
+            print("Note: APFS volumes created on newer OS versions (10.14+) can cause stalls")
+            print("when accessed on older macOS versions (10.13 and prior).  They will appear")
+            print("eventually, but may take several minutes.")
+        self.d = disk.Disk()
+        self.boot_manager = bdmesg.get_bootloader_uuid()
         # Get the tools we need
-        self.script_folder = "Scripts"
-        self.update_url = "https://raw.githubusercontent.com/corpnewt/MountEFIv2/master/MountEFI.command"
-        
+        self.script_folder = "Scripts"        
         self.settings_file = kwargs.get("settings", None)
         cwd = os.getcwd()
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -30,56 +39,15 @@ class MountEFI:
         os.chdir(cwd)
         self.full = self.settings.get("full_layout", False)
 
-    def check_update(self):
-        # Checks against https://raw.githubusercontent.com/corpnewt/MountEFIv2/master/MountEFI.command to see if we need to update
-        self.u.head("Checking for Updates")
-        print(" ")
-        with open(os.path.realpath(__file__), "r") as f:
-            # Our version should always be the second line
-            version = get_version(f.read())
-        print(version)
-        try:
-            new_text = _get_string(url)
-            new_version = get_version(new_text)
-        except:
-            # Not valid json data
-            print("Error checking for updates (network issue)")
-            return
-
-        if version == new_version:
-            # The same - return
-            print("v{} is already current.".format(version))
-            return
-        # Split the version number
-        try:
-            v = version.split(".")
-            cv = new_version.split(".")
-        except:
-            # not formatted right - bail
-            print("Error checking for updates (version string malformed)")
-            return
-
-        if not need_update(cv, v):
-            print("v{} is already current.".format(version))
-            return
-
-        # Update
-        with open(os.path.realpath(__file__), "w") as f:
-            f.write(new_text)
-
-        # chmod +x, then restart
-        run_command(["chmod", "+x", __file__])
-        os.execv(__file__, sys.argv)
-
     def flush_settings(self):
         if self.settings_file:
             cwd = os.getcwd()
             os.chdir(os.path.dirname(os.path.realpath(__file__)))
-            json.dump(self.settings, open(self.settings_file, "w"))
+            json.dump(self.settings, open(self.settings_file, "w"), indent=2)
             os.chdir(cwd)
 
     def after_mount(self):
-        if self.settings.get("resize_window"): self.u.resize(80, 24)
+        if self.settings.get("resize_window",True): self.u.resize(80, 24)
         self.u.head("After Mount Action")
         print(" ")
         print("1. Return to Menu")
@@ -123,13 +91,12 @@ class MountEFI:
 
     def default_disk(self):
         self.d.update()
-        clover = bdmesg.get_bootloader_uuid()
-        if self.settings.get("resize_window"): self.u.resize(80, 24)
+        if self.settings.get("resize_window",True): self.u.resize(80, 24)
         self.u.head("Select Default Disk")
         print(" ")
         print("1. None")
         print("2. Boot Disk")
-        if clover:
+        if self.boot_manager:
             print("3. Booted EFI (Clover/OC)")
         print(" ")
         print("M. Main Menu")
@@ -143,7 +110,7 @@ class MountEFI:
             self.settings["default_disk"] = [None, "boot"][int(menu)-1]
             self.flush_settings()
             return
-        elif menu == "3" and clover:
+        elif menu == "3" and self.boot_manager:
             self.settings["default_disk"] = "clover"
             self.flush_settings()
             return
@@ -155,31 +122,34 @@ class MountEFI:
 
     def get_efi(self):
         self.d.update()
-        clover = bdmesg.get_bootloader_uuid()
-        i = 0
         disk_string = ""
         if not self.full:
-            clover_disk = self.d.get_parent(clover)
+            boot_disk = self.d.get_parent(self.boot_manager)
             mounts = self.d.get_mounted_volume_dicts()
-            for d in mounts:
-                i += 1
-                disk_string += "{}. {} ({})".format(i, d["name"], d["identifier"])
-                if self.d.get_parent(d["identifier"]) == clover_disk:
-                # if d["disk_uuid"] == clover:
+            for i,d in enumerate(mounts,start=1):
+                disk_string += "{}. {} ({})".format(str(i).rjust(2), d["name"], d["identifier"])
+                if self.d.get_parent(d["identifier"]) == boot_disk:
                     disk_string += " *"
                 disk_string += "\n"
         else:
             mounts = self.d.get_disks_and_partitions_dict()
             disks = list(mounts)
-            for d in disks:
-                i += 1
-                disk_string+= "{}. {}:\n".format(i, d)
+            for i,d in enumerate(disks,start=1):
+                disk_string+= "{}. {}:\n".format(str(i).rjust(2),d)
+                if mounts[d].get("scheme"):
+                    disk_string += "      {}\n".format(mounts[d]["scheme"])
+                if mounts[d].get("physical_stores"):
+                    disk_string += "      Physical Store{} on {}\n".format(
+                        "" if len(mounts[d]["physical_stores"])==1 else "s",
+                        ", ".join(mounts[d]["physical_stores"])
+                    )
                 parts = mounts[d]["partitions"]
                 part_list = []
                 for p in parts:
-                    p_text = "        - {} ({})".format(p["name"], p["identifier"])
-                    if p["disk_uuid"] == clover:
-                        # Got Clover
+                    name = "Container for {}".format(p["container_for"]) if "container_for" in p else p["name"]
+                    p_text = "        - {} ({})".format(name, p["identifier"])
+                    if p["disk_uuid"] == self.boot_manager:
+                        # Got boot manager
                         p_text += " *"
                     part_list.append(p_text)
                 if len(part_list):
@@ -187,7 +157,7 @@ class MountEFI:
         height = len(disk_string.split("\n"))+16
         if height < 24:
             height = 24
-        if self.settings.get("resize_window"): self.u.resize(80, height)
+        if self.settings.get("resize_window",True): self.u.resize(80, height)
         self.u.head()
         print(" ")
         print(disk_string)
@@ -201,13 +171,13 @@ class MountEFI:
             l_str = "Full"
         print("L. Set As Default Layout (Current: {})".format(l_str))
         print("B. Mount the Boot Drive's EFI")
-        if clover:
+        if self.boot_manager:
             print("C. Mount the Booted EFI (Clover/OC)")
         print("")
 
         dd = self.settings.get("default_disk", None)
         if dd == "clover":
-            dd = clover
+            dd = self.boot_manager
         elif dd == "boot":
             dd = "/"
         di = self.d.get_identifier(dd)
@@ -232,15 +202,15 @@ class MountEFI:
             return self.d.get_efi(di)
         menu = menu.lower()
         if menu == "q":
-            if self.settings.get("resize_window"): self.u.resize(80,24)
+            if self.settings.get("resize_window",True): self.u.resize(80,24)
             self.u.custom_quit()
         elif menu == "s":
             self.full ^= True
             return self.get_efi()
         elif menu == "b":
             return self.d.get_efi("/")
-        elif menu == "c" and clover:
-            return self.d.get_efi(clover)
+        elif menu == "c" and self.boot_manager:
+            return self.d.get_efi(self.boot_manager)
         elif menu == "m":
             self.after_mount()
             return
@@ -280,7 +250,7 @@ class MountEFI:
                 # Got nothing back
                 continue
             # Resize and then mount the EFI partition
-            if self.settings.get("resize_window"): self.u.resize(80, 24)
+            if self.settings.get("resize_window",True): self.u.resize(80, 24)
             self.u.head("Mounting {}".format(efi))
             print(" ")
             out = self.d.mount_partition(efi)
@@ -330,7 +300,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    m = MountEFI(settings="./Scripts/settings.json")
+    # Determine if we need to print the warning about disk stalls
+    quiet = True if args.print_efi or args.disks else False
+    m = MountEFI(settings="./Scripts/settings.json",quiet=quiet)
     # Gather defaults
     unmount = False
     if args.unmount:
@@ -338,7 +310,7 @@ if __name__ == '__main__':
     if args.print_efi:
         print("{}".format(m.d.get_efi(args.print_efi)))
     # Check for args
-    if len(args.disks):
+    if args.disks:
         # We got command line args!
         m.quiet_mount(args.disks, unmount)
     elif not args.print_efi:
