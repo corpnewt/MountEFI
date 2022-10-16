@@ -12,7 +12,7 @@ class Disk:
             self.full_os_version += ".0"
         self.os_version = ".".join(self.full_os_version.split(".")[:2])
         self.sudo_mount_version = "10.13.6"
-        self.sudo_mount_types   = ["efi system partition"]
+        self.efi_guids   = ["C12A7328-F81F-11D2-BA4B-00A0C93EC93B"]
         self.disks = self.get_disks()
 
     def check_diskdump(self):
@@ -154,7 +154,7 @@ class Disk:
             if not parent_dict: continue
             for part in parent_dict.get("Partitions",[]):
                 # Use the GUID instead of media name - as that can vary
-                if part.get("DAMediaContent","").upper() == "C12A7328-F81F-11D2-BA4B-00A0C93EC93B":
+                if part.get("DAMediaContent","").upper() in self.efi_guids:
                     efis.append(part["DAMediaBSDName"])
                 # Normalize case for the DAMediaName;
                 # macOS disks: "EFI System Partition", Windows disks: "EFI system partition"
@@ -280,10 +280,7 @@ class Disk:
         return joined
 
     def get_content(self, disk, disk_dict = None):
-        # Check if we're on a whole disk first - as we'll need to use the
-        if self._get_value(disk,"DAMediaWhole",disk_dict=disk_dict):
-            return self._get_value(disk,"DAMediaContent",disk_dict=disk_dict)
-        return self._get_value(disk,"DAMediaName",disk_dict=disk_dict)
+        return self._get_value(disk,"DAMediaContent",disk_dict=disk_dict)
 
     def get_volume_name(self, disk, disk_dict = None):
         return self._get_value(disk,"DAVolumeName",disk_dict=disk_dict)
@@ -333,7 +330,7 @@ class Disk:
     def needs_sudo(self, disk = None, disk_dict = None):
         # Default to EFI if we didn't pass a disk
         if not disk: return self.compare_version(self.full_os_version,self.sudo_mount_version) in (True,None)
-        return self.compare_version(self.full_os_version,self.sudo_mount_version) in (True,None) and self.get_content(disk,disk_dict=disk_dict).lower() in self.sudo_mount_types
+        return self.compare_version(self.full_os_version,self.sudo_mount_version) in (True,None) and self.get_content(disk,disk_dict=disk_dict).upper() in self.efi_guids
 
     def mount_partition(self, disk, disk_dict = None):
         disk = self.get_identifier(disk,disk_dict=disk_dict)
