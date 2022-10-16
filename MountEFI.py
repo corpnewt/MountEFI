@@ -167,9 +167,9 @@ class MountEFI:
             )
             am = self.settings.get("after_mount","Return to Menu")
             disk_string += "M. After Mounting: {}\n".format(am)
-            disk_string += "R. Toggle Window Resizing (Currently {})\nQ. Quit\n\n".format("Enabled" if self.settings.get("resize_window",True) else "Disabled")
+            disk_string += "R. Toggle Window Resizing (Currently {})\nQ. Quit\n".format("Enabled" if self.settings.get("resize_window",True) else "Disabled")
             if self.boot_manager:
-                disk_string += "(* denotes the booted EFI (Clover/OC))"
+                disk_string += "\n(* denotes the booted EFI (Clover/OC))"
             height = max(len(disk_string.split("\n"))+pad,24)
             if self.settings.get("resize_window",True): self.u.resize(80, height)
             self.u.head()
