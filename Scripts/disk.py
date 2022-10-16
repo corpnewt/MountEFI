@@ -153,10 +153,14 @@ class Disk:
             parent_dict = self.get_disk(parent,disk_dict=disk_dict)
             if not parent_dict: continue
             for part in parent_dict.get("Partitions",[]):
+                # Use the GUID instead of media name - as that can vary
+                if part.get("DAMediaContent","").upper() == "C12A7328-F81F-11D2-BA4B-00A0C93EC93B":
+                    efis.append(part["DAMediaBSDName"])
                 # Normalize case for the DAMediaName;
                 # macOS disks: "EFI System Partition", Windows disks: "EFI system partition"
-                if part.get("DAMediaName").lower() == "efi system partition":
-                    efis.append(part["DAMediaBSDName"])
+                # Maybe use this approach as a fallback at some point - but for now, just use the GUID
+                # if part.get("DAMediaName").lower() == "efi system partition":
+                #     efis.append(part["DAMediaBSDName"])
         return efis
 
     def get_efi(self, disk = None, disk_dict = None):
