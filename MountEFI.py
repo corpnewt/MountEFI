@@ -155,7 +155,7 @@ class MountEFI:
                         part_list.append(p_text)
                     if len(part_list):
                         disk_string += "\n".join(part_list) + "\n"
-            disk_string += "\nS. Switch to {} Oputput\n".format("Slim" if self.settings.get("full_layout") else "Full")
+            disk_string += "\nS. Switch to {} Output\n".format("Slim" if self.settings.get("full_layout") else "Full")
             disk_string += "B. Mount the Boot Drive's EFI\n"
             if self.boot_manager:
                 disk_string += "C. Mount the Booted EFI (Clover/OC)\n"
