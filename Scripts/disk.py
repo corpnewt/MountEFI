@@ -247,6 +247,7 @@ class Disk:
     def __init__(self):
         self.r = run.Run()
         self.diskdump = self.check_diskdump()
+        self.diskutil_list = ""
         self.full_os_version = self.r.run({"args":["sw_vers", "-productVersion"]})[0]
         if len(self.full_os_version.split(".")) < 3:
             # Ensure the format is XX.YY.ZZ
@@ -322,12 +323,12 @@ class Disk:
         # Get our "diskutil list" and diskdump info.  Run diskutil list first
         # as it takes longer - but will stall while waiting for disks to appear,
         # meaning our diskdump output will be better reflected.
-        diskutil_list = self.r.run({"args":["diskutil","list"]})[0]
+        self.diskutil_list = self.r.run({"args":["diskutil","list"]})[0]
         diskstring = self.r.run({"args":[ddpath]})[0]
         if not diskstring: return {}
         diskdump = plist.loads(diskstring)
         last_disk = None
-        for line in diskutil_list.split("\n"):
+        for line in self.diskutil_list.split("\n"):
             if line.startswith("/dev/disk"):
                 last_disk = line.split()[0].split("/")[-1]
             elif not last_disk:
