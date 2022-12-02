@@ -195,6 +195,7 @@ class MountEFI:
                 disk = self.boot_manager
                 iden = self.d.get_efi(self.boot_manager)
             elif menu == "l":
+                self.d.update() # Force an update to get the most recent info
                 dl_message = "\n"+(self.d.diskutil_list or "diskutil list output was not found!").strip()+"\n"
                 if self.settings.get("resize_window",True):
                     self.u.resize(80,max(len(dl_message.split("\n"))+pad,24))
