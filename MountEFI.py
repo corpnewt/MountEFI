@@ -159,6 +159,7 @@ class MountEFI:
             disk_string += "B. Mount the Boot Drive's EFI\n"
             if self.boot_manager:
                 disk_string += "C. Mount the Booted EFI (Clover/OC)\n"
+            disk_string += "L. Show diskutil list Output\n"
             dd = self.settings.get("default_disk")
             dd = self.boot_manager if dd=="clover" else "/" if dd=="boot" else dd
             di = self.d.get_identifier(dd)
@@ -193,6 +194,14 @@ class MountEFI:
             elif menu == "c" and self.boot_manager:
                 disk = self.boot_manager
                 iden = self.d.get_efi(self.boot_manager)
+            elif menu == "l":
+                dl_message = "\n"+(self.d.diskutil_list or "diskutil list output was not found!").strip()+"\n"
+                if self.settings.get("resize_window",True):
+                    self.u.resize(80,max(len(dl_message.split("\n"))+pad,24))
+                self.u.head("Diskutil List Output")
+                print(dl_message)
+                self.u.grab("Press [enter] to return...")
+                continue
             elif menu == "m":
                 self.after_mount()
                 continue
