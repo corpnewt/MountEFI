@@ -524,7 +524,9 @@ class Disk:
                 "volume_uuid": self.get_volume_uuid(i,disk_dict=disk_dict),
                 "size_bytes": i.get("DAMediaSize",-1),
                 "size": self.get_readable_size(i,disk_dict=disk_dict),
-                "type": self.get_readable_type(i,disk_dict=disk_dict)
+                "readable_type": self.get_readable_type(i,disk_dict=disk_dict),
+                "volume_type": self.get_volume_type(i,disk_dict=disk_dict),
+                "partition_type": self.get_partition_type(i,disk_dict=disk_dict)
             }
             if "container_for" in i: vol["container_for"] = i["container_for"]
             vol_list.append(vol)
@@ -546,6 +548,9 @@ class Disk:
         #      "identifier" : "disk0s1", 
         #      "name" : "EFI", 
         #      "mount_point" : "/Volumes/EFI",
+        #      "readable_type" : readable type - either from GPT_GUIDS or file system,
+        #      "volume_type" : "MS-DOS (FAT32)",
+        #      "partition_type" : "Microsoft System Reserved"/GUID,
         #      "size": "X.Y GB",
         #      "size_bytes" 123456,
         #      "container_for": "diskCsD"
@@ -573,7 +578,9 @@ class Disk:
                     "mount_point": self.get_mount_point(p,disk_dict=disk_dict),
                     "disk_uuid": self.get_disk_uuid(p,disk_dict=disk_dict),
                     "volume_uuid": self.get_volume_uuid(p,disk_dict=disk_dict),
-                    "type": self.get_readable_type(p,disk_dict=disk_dict),
+                    "readable_type": self.get_readable_type(p,disk_dict=disk_dict),
+                    "volume_type": self.get_volume_type(p,disk_dict=disk_dict),
+                    "partition_type": self.get_partition_type(p,disk_dict=disk_dict),
                     "size_bytes": p.get("DAMediaSize",-1),
                     "size": self.get_readable_size(p,disk_dict=disk_dict)
                 }
