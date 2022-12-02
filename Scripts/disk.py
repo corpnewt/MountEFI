@@ -1,4 +1,4 @@
-import os, sys, json
+import os, sys
 sys.path.append(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))
 import run, plist
 
