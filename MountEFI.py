@@ -174,7 +174,7 @@ class MountEFI:
                     part_list = []
                     for p in parts:
                         name = "Container for {}".format(p["container_for"]) if "container_for" in p else p["name"]
-                        p_text = "        - {} | {} | {} ({})".format(
+                        p_text = "        - {} | {} | {} | {}".format(
                             str(name).ljust(name_pad),
                             p["size"].rjust(size_pad),
                             str(p["readable_type"]).ljust(type_pad),
