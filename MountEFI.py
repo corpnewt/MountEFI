@@ -128,7 +128,7 @@ class MountEFI:
                 boot_disk = self.d.get_parent(self.boot_manager)
                 mounts = self.d.get_mounted_volume_dicts()
                 for i,d in enumerate(mounts,start=1):
-                    disk_string += "{}. {} ({})".format(str(i).rjust(2), d["name"], d["identifier"])
+                    disk_string += "{}. {} | {} | {} ({})".format(str(i).rjust(2), d["name"], d["size"], d["type"], d["identifier"])
                     if self.d.get_parent(d["identifier"]) == boot_disk:
                         disk_string += " *"
                     disk_string += "\n"
@@ -136,7 +136,7 @@ class MountEFI:
                 mounts = self.d.get_disks_and_partitions_dict()
                 disks = list(mounts)
                 for i,d in enumerate(disks,start=1):
-                    disk_string+= "{}. {}:\n".format(str(i).rjust(2),d)
+                    disk_string+= "{}. {} ({}):\n".format(str(i).rjust(2),d,mounts[d]["size"])
                     if mounts[d].get("scheme"):
                         disk_string += "      {}\n".format(mounts[d]["scheme"])
                     if mounts[d].get("physical_stores"):
@@ -148,7 +148,7 @@ class MountEFI:
                     part_list = []
                     for p in parts:
                         name = "Container for {}".format(p["container_for"]) if "container_for" in p else p["name"]
-                        p_text = "        - {} ({})".format(name, p["identifier"])
+                        p_text = "        - {} | {} | {} ({})".format(name, p["size"], p["type"], p["identifier"])
                         if p["disk_uuid"] == self.boot_manager:
                             # Got boot manager
                             p_text += " *"
@@ -206,7 +206,7 @@ class MountEFI:
             else:
                 try: disk = mounts[int(menu)-1]["identifier"] if isinstance(mounts, list) else list(mounts)[int(menu)-1]
                 except: disk = menu
-            iden = self.d.get_identifier(disk)
+                iden = self.d.get_identifier(disk)
             if not iden:
                 self.u.grab("Invalid disk!", timeout=3)
                 continue
@@ -217,7 +217,7 @@ class MountEFI:
                 print("")
                 print("There is no EFI partition associated with {}!".format(iden))
                 print("")
-                self.u.grab("Press returning in 3 seconds...", timeout=3)
+                self.u.grab("Returning in 5 seconds...", timeout=5)
                 continue
             return efi
 
