@@ -208,7 +208,11 @@ class MountEFI:
                 except: disk = menu
                 iden = self.d.get_identifier(disk)
             if not iden:
-                self.u.grab("Invalid disk!", timeout=3)
+                self.u.head("Invalid Disk")
+                print("")
+                print("'{}' is not a valid disk!".format(disk))
+                print("")
+                self.u.grab("Returning in 5 seconds...", timeout=5)
                 continue
             # Valid disk!
             efi = self.d.get_efi(iden)
