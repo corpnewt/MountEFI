@@ -127,16 +127,42 @@ class MountEFI:
             if not self.settings.get("full_layout"):
                 boot_disk = self.d.get_parent(self.boot_manager)
                 mounts = self.d.get_mounted_volume_dicts()
+                # Gather some formatting info
+                name_pad = size_pad = type_pad = 0
+                index_pad = len(str(len(mounts)))
+                for x in mounts:
+                    if len(x["name"]) > name_pad: name_pad = len(x["name"])
+                    if len(x["size"]) > size_pad: size_pad = len(x["size"])
+                    if len(x["readable_type"]) > type_pad: type_pad = len(x["readable_type"])
                 for i,d in enumerate(mounts,start=1):
-                    disk_string += "{}. {} | {} | {} ({})".format(str(i).rjust(2), d["name"], d["size"], d["type"], d["identifier"])
+                    disk_string += "{}. {} | {} | {} | {}".format(
+                        str(i).rjust(index_pad),
+                        d["name"].ljust(name_pad),
+                        d["size"].rjust(size_pad),
+                        d["readable_type"].ljust(type_pad),
+                        d["identifier"]
+                    )
                     if self.d.get_parent(d["identifier"]) == boot_disk:
                         disk_string += " *"
                     disk_string += "\n"
             else:
                 mounts = self.d.get_disks_and_partitions_dict()
                 disks = list(mounts)
+                index_pad = len(str(len(disks)))
+                # Gather some formatting info
+                name_pad = size_pad = type_pad = 0
+                for d in disks:
+                    for x in mounts[d]["partitions"]:
+                        name = "Container for {}".format(x["container_for"]) if "container_for" in x else str(x["name"])
+                        if len(name) > name_pad: name_pad = len(name)
+                        if len(x["size"]) > size_pad: size_pad = len(x["size"])
+                        if len(x["readable_type"]) > type_pad: type_pad = len(x["readable_type"])
                 for i,d in enumerate(disks,start=1):
-                    disk_string+= "{}. {} ({}):\n".format(str(i).rjust(2),d,mounts[d]["size"])
+                    disk_string+= "{}. {} ({}):\n".format(
+                        str(i).rjust(index_pad),
+                        d,
+                        mounts[d]["size"]
+                    )
                     if mounts[d].get("scheme"):
                         disk_string += "      {}\n".format(mounts[d]["scheme"])
                     if mounts[d].get("physical_stores"):
@@ -148,7 +174,12 @@ class MountEFI:
                     part_list = []
                     for p in parts:
                         name = "Container for {}".format(p["container_for"]) if "container_for" in p else p["name"]
-                        p_text = "        - {} | {} | {} ({})".format(name, p["size"], p["type"], p["identifier"])
+                        p_text = "        - {} | {} | {} ({})".format(
+                            str(name).ljust(name_pad),
+                            p["size"].rjust(size_pad),
+                            p["readable_type"].ljust(type_pad),
+                            p["identifier"]
+                        )
                         if p["disk_uuid"] == self.boot_manager:
                             # Got boot manager
                             p_text += " *"
@@ -172,7 +203,8 @@ class MountEFI:
             if self.boot_manager:
                 disk_string += "\n(* denotes the booted EFI (Clover/OC))"
             height = max(len(disk_string.split("\n"))+pad,24)
-            if self.settings.get("resize_window",True): self.u.resize(80, height)
+            width  = max((len(x) for x in disk_string.split("\n")))
+            if self.settings.get("resize_window",True): self.u.resize(max(80,width), height)
             self.u.head()
             print(disk_string)
             menu = self.u.grab("Pick the drive containing your EFI:  ")
