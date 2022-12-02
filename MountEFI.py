@@ -137,9 +137,9 @@ class MountEFI:
                 for i,d in enumerate(mounts,start=1):
                     disk_string += "{}. {} | {} | {} | {}".format(
                         str(i).rjust(index_pad),
-                        d["name"].ljust(name_pad),
+                        str(d["name"]).ljust(name_pad),
                         d["size"].rjust(size_pad),
-                        d["readable_type"].ljust(type_pad),
+                        str(d["readable_type"]).ljust(type_pad),
                         d["identifier"]
                     )
                     if self.d.get_parent(d["identifier"]) == boot_disk:
@@ -177,7 +177,7 @@ class MountEFI:
                         p_text = "        - {} | {} | {} ({})".format(
                             str(name).ljust(name_pad),
                             p["size"].rjust(size_pad),
-                            p["readable_type"].ljust(type_pad),
+                            str(p["readable_type"]).ljust(type_pad),
                             p["identifier"]
                         )
                         if p["disk_uuid"] == self.boot_manager:
