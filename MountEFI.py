@@ -222,10 +222,8 @@ class MountEFI:
                 continue
             elif menu == "b":
                 disk = "/"
-                iden = self.d.get_identifier("/")
             elif menu == "c" and self.boot_manager:
                 disk = self.boot_manager
-                iden = self.d.get_identifier(self.boot_manager)
             elif menu == "l":
                 self.d.update() # Force an update to get the most recent info
                 dl_message = "\n"+(self.d.diskutil_list or "diskutil list output was not found!").strip()+"\n"
@@ -248,7 +246,7 @@ class MountEFI:
             else:
                 try: disk = mounts[int(menu)-1]["identifier"] if isinstance(mounts, list) else list(mounts)[int(menu)-1]
                 except: disk = menu
-                iden = self.d.get_identifier(disk)
+            iden = self.d.get_identifier(disk)
             if not iden:
                 self.u.head("Invalid Disk")
                 print("")
