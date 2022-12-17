@@ -222,10 +222,10 @@ class MountEFI:
                 continue
             elif menu == "b":
                 disk = "/"
-                iden = self.d.get_efi("/")
+                iden = self.d.get_identifier("/")
             elif menu == "c" and self.boot_manager:
                 disk = self.boot_manager
-                iden = self.d.get_efi(self.boot_manager)
+                iden = self.d.get_identifier(self.boot_manager)
             elif menu == "l":
                 self.d.update() # Force an update to get the most recent info
                 dl_message = "\n"+(self.d.diskutil_list or "diskutil list output was not found!").strip()+"\n"
