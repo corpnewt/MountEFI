@@ -14,7 +14,7 @@ class MountEFI:
             self.u.head("MountEFI")
             print("\nWaiting for disks...")
             print("\nIf you see this message for a long while, you may have a disk that is")
-            print("slow or malfunctioning - causing \"diskutil list\" or \"diskdump\" to stall.")
+            print("slow or malfunctioning - causing \"diskdump\" to stall.")
             print("")
             print("Note: APFS volumes created on newer OS versions (10.14+) can cause stalls")
             print("when accessed on older macOS versions (10.13 and prior).  They will appear")
@@ -225,8 +225,17 @@ class MountEFI:
             elif menu == "c" and self.boot_manager:
                 disk = self.boot_manager
             elif menu == "l":
-                self.d.update() # Force an update to get the most recent info
-                dl_message = "\n"+(self.d.diskutil_list or "diskutil list output was not found!").strip()+"\n"
+                self.u.head("MountEFI")
+                print("\nWaiting for disks...")
+                print("\nIf you see this message for a long while, you may have a disk that is")
+                print("slow or malfunctioning - causing \"diskutil\" to stall.")
+                print("")
+                print("Note: APFS volumes created on newer OS versions (10.14+) can cause stalls")
+                print("when accessed on older macOS versions (10.13 and prior).  They will appear")
+                print("eventually, but may take several minutes.")
+                try: diskutil_list = self.r.run({"args":["diskutil","list"]})[0]
+                except: diskutil_list = ""
+                dl_message = "\n"+(diskutil_list or "diskutil list output was not found!").strip()+"\n"
                 if self.settings.get("resize_window",True):
                     self.u.resize(80,max(len(dl_message.split("\n"))+pad,24))
                 self.u.head("Diskutil List Output")
