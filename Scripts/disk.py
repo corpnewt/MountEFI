@@ -1,4 +1,4 @@
-import os, sys, shutil
+import os, sys, shutil, re
 sys.path.append(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))
 import run, plist
 
@@ -246,7 +246,8 @@ GPT_GUIDS = {
 class Disk:
     def __init__(self):
         self.r = run.Run()
-        self.diskdump = self.check_diskdump()
+        self.version_re = re.compile(r"diskdump ([a-zA-z\d]+\.[a-zA-Z\d]+\.[a-zA-Z\d]+)")
+        self.diskdump,self.diskdump_version = self.check_diskdump()
         self.full_os_version = self.r.run({"args":["sw_vers", "-productVersion"]})[0]
         if len(self.full_os_version.split(".")) < 3:
             # Ensure the format is XX.YY.ZZ
@@ -302,19 +303,38 @@ class Disk:
         b = b.rstrip("0") if strip_zeroes else b.ljust(round_to,"0") if round_to > 0 else ""
         return "{:,}{} {}".format(int(a),"" if not b else "."+b,biggest)
 
+    def get_diskdump_version(self, diskdump_path):
+        # Helper to attempt to extract the version from
+        # "diskdump version" given a path.
+        version = "0.0.0"
+        if os.path.exists(diskdump_path):
+            if "com.apple.quarantine" in self.r.run({"args":["xattr",diskdump_path]})[0]:
+                self.r.run({"args":["xattr","-d","com.apple.quarantine",diskdump_path]})
+            if not os.access(diskdump_path, os.X_OK):
+                self.r.run({"args":["chmod","+x",diskdump_path]})
+            try:
+                # Attempt to extract "diskdump A.B.C" from the "diskdump version"
+                # results - and pull the "A.B.C" group from the regex match
+                version = self.version_re.match(
+                    self.r.run({"args":[diskdump_path,"version"]})[0].split("\n")[0].strip()
+                ).group(1)
+            except:
+                pass
+        return version
+
     def check_diskdump(self):
         ddpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),"diskdump")
         if not os.path.exists(ddpath):
             raise FileNotFoundError("Could not locate diskdump")
-        if "com.apple.quarantine" in self.r.run({"args":["xattr",ddpath]})[0]:
-            self.r.run({"args":["xattr","-d","com.apple.quarantine",ddpath]})
+        # Get the local version, falling back to 0.0.0 if there's no match
+        local_version = self.get_diskdump_version(ddpath)
         # Check if we're running as root, or if we're not in a folder nested within
         # ~/Desktop or ~/Downloads - as we don't have to worry about retaining
         # local copies of diskdump in those situations
         desktop   = os.path.realpath(os.path.expanduser(os.path.join("~","Desktop")))+os.sep
         downloads = os.path.realpath(os.path.expanduser(os.path.join("~","Downloads")))+os.sep
         if os.getuid() == 0 or not ddpath.startswith((desktop,downloads)):
-            return ddpath
+            return (ddpath,local_version)
         # If diskdump is run from a folder nested under Desktop or Downloads, it will
         # need sudo even for basic (non-ESP) mounts and unmounts.  To work around this
         # we'll ensure we place it in the Application Support folder.  We'll check the
@@ -330,18 +350,17 @@ class Disk:
         # Got the folder - let's check if there's a diskdump bin already there, then
         # try to get the version, and compare with our own
         ddtarget = os.path.join(ddfolder,"diskdump")
-        installed_version = None
-        if os.path.exists(ddtarget):
-            # Located an installed copy - try to get the version from it
-            installed_version = self.r.run({"args":[ddtarget,"version"]})[0].split("\n")[0].strip()
-        local_version = self.r.run({"args":[ddpath,"version"]})[0].split("\n")[0].strip()
-        if installed_version != local_version:
+        installed_version = self.get_diskdump_version(ddtarget)
+        if self.compare_version(local_version,installed_version):
             # We need to replace the installed bin to match our local copy
             try:
                 shutil.copy(ddpath,ddtarget)
             except Exception as e:
                 raise FileNotFoundError("Failed to copy diskdump to ~/Library/Application Support/CorpNewt/DiskDump: {}".format(e))
-        return ddtarget
+            # Update the installed_version to reflect the local_version we just
+            # copied in
+            installed_version = local_version
+        return (ddtarget,installed_version)
 
     def update(self):
         # Refresh our disk list
