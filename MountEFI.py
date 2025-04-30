@@ -54,9 +54,9 @@ class MountEFI:
         print("3. Open EFI and Return to Menu")
         print("4. Open EFI and Quit")
         if not self.settings.get("skip_countdown", False):
-            print("5. Skip After-Mount Countdown")
+            print("5. Skip 3 Second After-Mount Countdown")
         else:
-            print("5. Use After-Mount Countdown")
+            print("5. Use 3 Second After-Mount Countdown")
         print(" ")
         print("M. Main Menu")
         print("Q. Quit")
@@ -285,30 +285,34 @@ class MountEFI:
             self.u.head("Mounting EFI Partition{}".format("" if len(efi) == 1 else "s"))
             print(" ")
             failed = False
+            am = self.settings.get("after_mount", None)
+            # Re-scan disks to ensure we're working with the most up to date info
+            self.d.update()
             for e in efi:
                 print("Mounting {}...".format(e))
-                out = self.d.mount_partition(e)
-                if out[2] == 0:
-                    print(out[0].strip())
+                mp = self.d.get_mount_point(e)
+                if not mp:
+                    out = self.d.mount_partition(e)
+                    if out[2] == 0:
+                        print(out[0].strip())
+                    else:
+                        print(out[1].strip() or "Something went wrong")
+                        failed = True
                 else:
-                    print(out[1].strip() or "Something went wrong")
-                    failed = True
+                    print("Already mounted at {}...".format(mp))
+                if am and "reveal" in am.lower():
+                    mp = self.d.get_mount_point(e)
+                    if mp:
+                        print("Opening...")
+                        self.r.run({"args":["open", mp]})
             if failed:
                 print("")
                 self.u.grab("Press [enter] to return...")
-            # Check our settings
-            am = self.settings.get("after_mount", None)
-            if not am:
-                continue
-            if "reveal" in am.lower():
-                # Reveal
-                mp = self.d.get_mount_point(efi)
-                if mp:
-                    self.r.run({"args":["open", mp]})
             # Hang out for a couple seconds
             if not self.settings.get("skip_countdown", False):
-                self.u.grab("", timeout=3)
-            if "quit" in am.lower():
+                action = "returning" if not am or not "quit" in am.lower() else "quitting"
+                self.u.grab("\nPausing for 3 seconds before {}...".format(action),timeout=3)
+            if am and "quit" in am.lower():
                 # Quit
                 self.u.custom_quit()
 
