@@ -384,7 +384,7 @@ class Disk:
         disk_dict = disk_dict or self.disks # Normalize the dict
         disk = disk[6:] if disk.lower().startswith("/dev/rdisk") else disk[5:] if disk.lower().startswith("/dev/disk") else disk
         if disk.lower() in disk_dict.get("AllDisks",[]): return disk
-        for d in disk_dict.get("AllDisksAndPartitions", []):
+        for d in disk_dict.get("AllDisksAndPartitions",[]):
             # Check the parent disk
             if any((disk.lower()==d.get(x,"").lower() for x in ("DAMediaBSDName","DAVolumeName","DAVolumeUUID","DAMediaUUID","DAVolumePath"))):
                 return d.get("DAMediaBSDName")
@@ -439,6 +439,8 @@ class Disk:
         # Walk AllDisksAndPartitions, and return the first hit
         for d in (disk_dict or self.disks).get("AllDisksAndPartitions",[]):
             d_ident = d.get("DAMediaBSDName")
+            if not d_ident:
+                continue # Did not resolve
             if d_ident == disk:
                 return d # Got the disk
             elif d_ident == parent:
@@ -457,11 +459,6 @@ class Disk:
                 # Use the GUID instead of media name - as that can vary
                 if part.get("DAMediaContent","").upper() in self.efi_guids:
                     efis.append(part["DAMediaBSDName"])
-                # Normalize case for the DAMediaName;
-                # macOS disks: "EFI System Partition", Windows disks: "EFI system partition"
-                # Maybe use this approach as a fallback at some point - but for now, just use the GUID
-                # if part.get("DAMediaName").lower() == "efi system partition":
-                #     efis.append(part["DAMediaBSDName"])
         return efis
 
     def get_efi(self, disk = None, disk_dict = None):
@@ -522,7 +519,7 @@ class Disk:
     def get_mounted_volume_dicts(self, disk_dict = None):
         # Returns a list of dicts of name, identifier, mount point dicts
         vol_list = []
-        for v in (disk_dict or self.disks).get("MountPointsFromDisks"):
+        for v in (disk_dict or self.disks).get("MountPointsFromDisks",[]):
             i = self.get_disk(v,disk_dict=disk_dict)
             if not i: continue # Skip - as it didn't resolve
             mount_point = self.get_mount_point(i,disk_dict=disk_dict)
@@ -570,7 +567,7 @@ class Disk:
         #     } 
         #  ] } }
         disks = {}
-        for d in sorted((disk_dict or self.disks).get("AllDisksAndPartitions"),key=lambda x:x.get("DAMediaBSDName")):
+        for d in sorted((disk_dict or self.disks).get("AllDisksAndPartitions",[]),key=lambda x:x.get("DAMediaBSDName")):
             if not "DAMediaBSDName" in d: continue # Malformed
             parent = d["DAMediaBSDName"]
             disks[parent] = {"partitions":[]}
